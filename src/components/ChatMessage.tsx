@@ -15,13 +15,15 @@ export default function ChatMessage({ message }: ChatMessageProps) {
     <div
       className={cn(
         "flex gap-3 items-start",
-        isUser && "flex-row-reverse"
+        isUser
+          ? "flex-row-reverse animate-slide-in-right"
+          : "animate-slide-in-left"
       )}
     >
       {/* Avatar */}
       <div
         className={cn(
-          "flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center mt-0.5",
+          "flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center mt-0.5 transition-transform duration-200 hover:scale-110",
           isUser
             ? "bg-stone-700"
             : "bg-amber-500/20 border border-amber-500/30"

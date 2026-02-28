@@ -23,29 +23,38 @@ export default function Navbar() {
           {/* Logo */}
           <Link
             href="/"
-            className="flex items-center gap-2 font-bold text-amber-400 text-lg hover:text-amber-300 transition-colors"
+            className="flex items-center gap-2 font-bold text-amber-400 text-lg hover:text-amber-300 transition-colors duration-200 group"
           >
-            <ShieldCheck className="h-6 w-6" strokeWidth={2} />
+            <ShieldCheck
+              className="h-6 w-6 transition-transform duration-300 group-hover:rotate-12"
+              strokeWidth={2}
+            />
             <span className="hidden sm:block">The Solana Sheriff</span>
             <span className="sm:hidden">Sheriff</span>
           </Link>
 
           {/* Nav links */}
           <div className="flex items-center gap-1">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={cn(
-                  "px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                  pathname === link.href
-                    ? "text-amber-400 bg-amber-500/10"
-                    : "text-stone-400 hover:text-stone-100 hover:bg-stone-800"
-                )}
-              >
-                {link.label}
-              </Link>
-            ))}
+            {navLinks.map((link) => {
+              const active = pathname === link.href;
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={cn(
+                    "relative px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200",
+                    active
+                      ? "text-amber-400 bg-amber-500/10"
+                      : "text-stone-400 hover:text-stone-100 hover:bg-stone-800"
+                  )}
+                >
+                  {link.label}
+                  {active && (
+                    <span className="absolute bottom-0.5 left-3 right-3 h-0.5 bg-amber-400 rounded-full animate-fade-in" />
+                  )}
+                </Link>
+              );
+            })}
           </div>
         </div>
       </div>

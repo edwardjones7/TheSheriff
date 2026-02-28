@@ -68,7 +68,7 @@ export default function CheckPage() {
     <div className="min-h-screen py-12 px-4">
       <div className="container mx-auto max-w-2xl">
         {/* Header */}
-        <div className="mb-10">
+        <div className="mb-10 animate-fade-in-up" style={{ animationDelay: "0ms" }}>
           <div className="flex items-center gap-3 mb-3">
             <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-2.5">
               <Users className="h-5 w-5 text-amber-400" />
@@ -85,8 +85,11 @@ export default function CheckPage() {
         </div>
 
         {/* Visual flow */}
-        <div className="flex items-center justify-center gap-3 mb-8 text-sm">
-          <div className="bg-stone-800 border border-stone-700 rounded-lg px-3 py-2 text-stone-300">
+        <div
+          className="flex items-center justify-center gap-3 mb-8 text-sm animate-fade-in-up"
+          style={{ animationDelay: "80ms" }}
+        >
+          <div className="bg-stone-800 border border-stone-700 rounded-lg px-3 py-2 text-stone-300 transition-colors duration-200 hover:border-stone-600">
             Your wallet
           </div>
           <ArrowRight className="h-4 w-4 text-stone-600" />
@@ -94,13 +97,16 @@ export default function CheckPage() {
             Sheriff checks
           </div>
           <ArrowRight className="h-4 w-4 text-stone-600" />
-          <div className="bg-stone-800 border border-stone-700 rounded-lg px-3 py-2 text-stone-300">
+          <div className="bg-stone-800 border border-stone-700 rounded-lg px-3 py-2 text-stone-300 transition-colors duration-200 hover:border-stone-600">
             Recipient wallet
           </div>
         </div>
 
         {/* Input */}
-        <div className="bg-stone-800/60 border border-stone-700 rounded-2xl p-6 mb-6">
+        <div
+          className="bg-stone-800/60 border border-stone-700 rounded-2xl p-6 mb-6 animate-fade-in-up"
+          style={{ animationDelay: "140ms" }}
+        >
           <label className="block text-sm font-medium text-stone-300 mb-3">
             Recipient&apos;s Wallet Address
           </label>
@@ -116,7 +122,7 @@ export default function CheckPage() {
 
         {/* Error */}
         {error && (
-          <div className="mb-6 p-4 bg-red-900/20 border border-red-500/30 rounded-xl text-red-400 text-sm">
+          <div className="mb-6 p-4 bg-red-900/20 border border-red-500/30 rounded-xl text-red-400 text-sm animate-fade-in-up">
             ⚠ {error}
           </div>
         )}
@@ -124,9 +130,7 @@ export default function CheckPage() {
         {/* Results */}
         {result && (
           <div
-            className={`border rounded-2xl overflow-hidden ${
-              riskColors[result.riskLevel]
-            }`}
+            className={`border rounded-2xl overflow-hidden animate-fade-in-up ${riskColors[result.riskLevel]}`}
           >
             {/* Result header */}
             <div className="px-6 py-5 border-b border-stone-700/50">
@@ -170,7 +174,8 @@ export default function CheckPage() {
                 {result.findings.map((finding, i) => (
                   <li
                     key={i}
-                    className="flex items-start gap-2.5 text-stone-300 text-sm"
+                    className="flex items-start gap-2.5 text-stone-300 text-sm animate-fade-in-up"
+                    style={{ animationDelay: `${i * 50}ms` }}
                   >
                     <ChevronRight className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
                     {finding}
@@ -192,7 +197,7 @@ export default function CheckPage() {
         )}
 
         {/* Info note */}
-        <p className="text-stone-600 text-xs text-center mt-6">
+        <p className="text-stone-600 text-xs text-center mt-6 animate-fade-in" style={{ animationDelay: "200ms" }}>
           This check uses on-chain data to flag risk signals. It does not
           guarantee safety — always verify the recipient through a trusted
           channel.
