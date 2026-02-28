@@ -3,14 +3,10 @@ import {
   ShieldCheck,
   MessageCircle,
   Search,
-  Users,
   BookOpen,
   AlertTriangle,
   Star,
   ArrowRight,
-  Globe,
-  Zap,
-  TrendingDown,
   Cpu,
   Lock,
   UserX,
@@ -30,22 +26,13 @@ const tools = [
     number: "02",
     href: "/analyze",
     icon: Search,
-    title: "Wallet Risk Analyzer",
+    title: "Wallet Analyzer",
     description:
-      "Paste any Solana wallet address and we'll analyze its transaction history for scammer patterns, drainer behavior, and risk signals.",
+      "Paste any Solana wallet address and get an instant risk assessment — whether you're checking a wallet you interacted with or a recipient before you send funds.",
     cta: "Analyze a Wallet",
   },
   {
     number: "03",
-    href: "/check",
-    icon: Users,
-    title: "Recipient Safety Check",
-    description:
-      "Before you send SOL or tokens to someone, verify their wallet looks safe. Avoid accidentally sending funds to scammers.",
-    cta: "Check a Recipient",
-  },
-  {
-    number: "04",
     href: "/resources",
     icon: BookOpen,
     title: "Safety Resource Hub",
@@ -55,38 +42,6 @@ const tools = [
   },
 ];
 
-const threats = [
-  {
-    icon: Globe,
-    label: "Phishing",
-    title: "Fake Sites & Clone Apps",
-    description:
-      "Counterfeit Phantom wallet pages, fake airdrop sites, and dApp clones built to harvest your seed phrase.",
-    borderColor: "border-l-red-500/50",
-    iconBg: "bg-red-500/10",
-    iconColor: "text-red-400",
-  },
-  {
-    icon: Zap,
-    label: "Drainers",
-    title: "Silent Wallet Drainers",
-    description:
-      "Malicious smart contracts disguised as NFT mints or token approvals that empty your entire wallet in one click.",
-    borderColor: "border-l-orange-500/50",
-    iconBg: "bg-orange-500/10",
-    iconColor: "text-orange-400",
-  },
-  {
-    icon: TrendingDown,
-    label: "Rug Pulls",
-    title: "Scam Tokens & Rug Pulls",
-    description:
-      "Projects that vanish overnight, honeypot tokens you can't sell, and influencer pump-and-dump schemes.",
-    borderColor: "border-l-amber-500/50",
-    iconBg: "bg-amber-500/10",
-    iconColor: "text-amber-400",
-  },
-];
 
 const trustSignals = [
   { icon: Cpu, text: "AI-Powered Analysis" },
@@ -167,10 +122,10 @@ export default function HomePage() {
             style={{ animationDelay: "320ms" }}
           >
             <Link
-              href="/check"
+              href="/analyze"
               className="group inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-stone-900 font-bold px-8 py-3.5 rounded-xl transition-all duration-200 text-lg shadow-lg shadow-amber-500/20 hover:shadow-amber-500/40 hover:-translate-y-0.5 active:translate-y-0"
             >
-              Check a Wallet
+              Analyze a Wallet
               <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform duration-200" />
             </Link>
             <Link
@@ -210,15 +165,14 @@ export default function HomePage() {
               The Toolkit
             </p>
             <h2 className="text-4xl font-bold text-stone-100 mb-4">
-              Four tools. Zero jargon.
+              Three tools. Zero jargon.
             </h2>
             <p className="text-stone-400 text-lg max-w-xl mx-auto">
               Everything a crypto newcomer needs to stay safe — built for real people, not developers.
             </p>
           </div>
 
-          {/* 2×2 grid */}
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid md:grid-cols-3 gap-4">
             {tools.map((tool, i) => {
               const Icon = tool.icon;
               return (
@@ -228,13 +182,8 @@ export default function HomePage() {
                   className="group relative bg-stone-900 border border-stone-800 hover:border-amber-500/40 rounded-2xl p-7 transition-all duration-300 hover:bg-stone-800/60 hover:shadow-xl hover:shadow-amber-500/5 hover:-translate-y-1 overflow-hidden animate-fade-in-up"
                   style={{ animationDelay: `${i * 70}ms` }}
                 >
-                  {/* Ghost number */}
-                  <span className="absolute top-4 right-5 text-7xl font-black text-stone-800 group-hover:text-stone-700/80 transition-colors duration-300 select-none leading-none pointer-events-none">
-                    {tool.number}
-                  </span>
-
-                  {/* Top-edge accent on hover */}
-                  <div className="absolute top-0 left-8 right-8 h-px bg-amber-500/0 group-hover:bg-amber-500/50 transition-all duration-300" />
+                  {/* Top-edge accent */}
+                  <div className="absolute top-0 left-6 right-6 h-px bg-amber-500/0 group-hover:bg-amber-500/50 transition-all duration-300" />
 
                   {/* Icon */}
                   <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 inline-flex mb-5 group-hover:bg-amber-500/20 transition-colors duration-200">
@@ -249,59 +198,12 @@ export default function HomePage() {
                     {tool.description}
                   </p>
 
-                  {/* CTA link */}
+                  {/* CTA */}
                   <div className="flex items-center gap-1.5 text-amber-500 text-sm font-semibold group-hover:text-amber-400 transition-colors duration-200">
                     {tool.cta}
                     <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform duration-200" />
                   </div>
                 </Link>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* ── 5. Threats section ── */}
-      <section className="py-20 px-4 border-t border-stone-800 bg-stone-950/60">
-        <div className="container mx-auto max-w-5xl">
-
-          <div
-            className="text-center mb-12 animate-fade-in-up"
-            style={{ animationDelay: "0ms" }}
-          >
-            <p className="text-red-400 text-sm font-semibold uppercase tracking-widest mb-3">
-              Stay Aware
-            </p>
-            <h2 className="text-4xl font-bold text-stone-100 mb-4">
-              What the Sheriff watches for
-            </h2>
-            <p className="text-stone-400 text-lg max-w-xl mx-auto">
-              Crypto moves fast. Scammers move faster. Know the threats before they find you.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-5">
-            {threats.map((threat, i) => {
-              const Icon = threat.icon;
-              return (
-                <div
-                  key={threat.title}
-                  className={`bg-stone-900 border border-stone-800 border-l-2 ${threat.borderColor} rounded-2xl p-6 animate-fade-in-up`}
-                  style={{ animationDelay: `${i * 80}ms` }}
-                >
-                  <div className={`${threat.iconBg} rounded-xl p-3 inline-flex mb-4`}>
-                    <Icon className={`h-5 w-5 ${threat.iconColor}`} />
-                  </div>
-                  <p className="text-xs font-semibold uppercase tracking-widest text-stone-500 mb-1">
-                    {threat.label}
-                  </p>
-                  <h3 className="text-base font-bold text-stone-100 mb-2">
-                    {threat.title}
-                  </h3>
-                  <p className="text-stone-400 text-sm leading-relaxed">
-                    {threat.description}
-                  </p>
-                </div>
               );
             })}
           </div>

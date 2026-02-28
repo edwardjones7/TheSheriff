@@ -68,12 +68,13 @@ export default function AnalyzePage() {
               <Search className="h-5 w-5 text-amber-400" />
             </div>
             <h1 className="text-3xl font-bold text-stone-100">
-              Wallet Risk Analyzer
+              Wallet Analyzer
             </h1>
           </div>
           <p className="text-stone-400 leading-relaxed">
-            Analyze any Solana wallet address for suspicious activity, scammer
-            patterns, and risk indicators. Powered by on-chain data.
+            Paste any Solana wallet address to check for scammer patterns and
+            risk signals — whether you're investigating a suspicious wallet or
+            verifying a recipient before sending funds.
           </p>
         </div>
 

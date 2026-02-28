@@ -13,14 +13,7 @@ const EXAMPLE_PROMPTS = [
 ];
 
 export default function ChatPage() {
-  const [messages, setMessages] = useState<Message[]>(() => {
-    try {
-      const saved = sessionStorage.getItem("sheriff-chat");
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -34,32 +27,11 @@ export default function ChatPage() {
   const [ttsError, setTTSError] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const shouldScrollRef = useRef(false);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
   useEffect(() => {
     if ("scrollRestoration" in history) history.scrollRestoration = "manual";
     requestAnimationFrame(() => window.scrollTo(0, 0));
   }, []);
-
-  useEffect(() => {
-    try {
-      sessionStorage.setItem("sheriff-chat", JSON.stringify(messages));
-    } catch {}
-  }, [messages]);
-
-  useEffect(() => {
-    if (shouldScrollRef.current) {
-      scrollToBottom();
-      shouldScrollRef.current = false;
-    }
-  }, [messages]);
 
   // Stop audio and recording when page unmounts
   useEffect(() => {
@@ -189,7 +161,6 @@ export default function ChatPage() {
       ...messages,
       { role: "user", content: trimmed },
     ];
-    shouldScrollRef.current = true;
     setMessages(newMessages);
     setInput("");
     setIsLoading(true);
@@ -246,7 +217,7 @@ export default function ChatPage() {
     <div className="flex flex-col h-[calc(100vh-4rem)]">
 
       {/* Messages area */}
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto">
         <div className="container mx-auto max-w-3xl px-4 py-6 space-y-5">
 
           {/* Welcome state */}
@@ -315,7 +286,7 @@ export default function ChatPage() {
               </div>
             )}
 
-          <div ref={messagesEndRef} />
+          <div />
         </div>
       </div>
 
