@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Send, ShieldCheck, Loader2 } from "lucide-react";
+import { Send, ShieldCheck, Loader2, Mic, MicOff } from "lucide-react";
 import ChatMessage from "@/components/ChatMessage";
 import { Message } from "@/types";
 
@@ -23,6 +23,17 @@ export default function ChatPage() {
   });
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  // STT
+  const [isRecording, setIsRecording] = useState(false);
+  const recognitionRef = useRef<any>(null);
+
+  // TTS
+  const [playingIndex, setPlayingIndex] = useState<number | null>(null);
+  const [ttsLoadingIndex, setTTSLoadingIndex] = useState<number | null>(null);
+  const [ttsError, setTTSError] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -50,9 +61,129 @@ export default function ChatPage() {
     }
   }, [messages]);
 
+  // Stop audio and recording when page unmounts
+  useEffect(() => {
+    return () => {
+      audioRef.current?.pause();
+      recognitionRef.current?.stop();
+    };
+  }, []);
+
+  // ── STT ────────────────────────────────────────────────────────────────────
+
+  const toggleRecording = () => {
+    if (isRecording) {
+      recognitionRef.current?.stop();
+      setIsRecording(false);
+      return;
+    }
+
+    const SpeechRecognitionAPI =
+      (window as any).SpeechRecognition ||
+      (window as any).webkitSpeechRecognition;
+
+    if (!SpeechRecognitionAPI) {
+      alert("Speech recognition isn't supported in this browser. Try Chrome or Edge.");
+      return;
+    }
+
+    const recognition = new SpeechRecognitionAPI();
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.lang = "en-US";
+
+    recognition.onresult = (event: any) => {
+      const transcript = Array.from(event.results as any[])
+        .map((result: any) => result[0].transcript)
+        .join("");
+      setInput(transcript);
+    };
+
+    recognition.onerror = () => {
+      setIsRecording(false);
+    };
+
+    recognition.onend = () => {
+      setIsRecording(false);
+      inputRef.current?.focus();
+    };
+
+    recognition.start();
+    recognitionRef.current = recognition;
+    setIsRecording(true);
+  };
+
+  // ── TTS ────────────────────────────────────────────────────────────────────
+
+  const playTTS = async (text: string, index: number) => {
+    // If the same message is already playing, stop it
+    if (playingIndex === index) {
+      audioRef.current?.pause();
+      audioRef.current = null;
+      setPlayingIndex(null);
+      return;
+    }
+
+    // Stop any other audio
+    audioRef.current?.pause();
+    audioRef.current = null;
+    setPlayingIndex(null);
+
+    setTTSLoadingIndex(index);
+
+    setTTSError(null);
+
+    try {
+      const response = await fetch("/api/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        if (response.status === 503) {
+          throw new Error("ElevenLabs API key not configured in .env");
+        }
+        throw new Error(body.error ?? `HTTP ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      audioRef.current = audio;
+
+      audio.onended = () => {
+        setPlayingIndex(null);
+        URL.revokeObjectURL(url);
+      };
+
+      audio.onerror = () => {
+        setPlayingIndex(null);
+        setTTSError("Audio playback failed.");
+        URL.revokeObjectURL(url);
+      };
+
+      setTTSLoadingIndex(null);
+      setPlayingIndex(index);
+      await audio.play();
+    } catch (err) {
+      setTTSLoadingIndex(null);
+      setPlayingIndex(null);
+      setTTSError(err instanceof Error ? err.message : "TTS failed.");
+    }
+  };
+
+  // ── Chat ───────────────────────────────────────────────────────────────────
+
   const sendMessage = async (content: string) => {
     const trimmed = content.trim();
     if (!trimmed || isLoading) return;
+
+    // Stop any playing audio when user sends a new message
+    audioRef.current?.pause();
+    audioRef.current = null;
+    setPlayingIndex(null);
 
     const newMessages: Message[] = [
       ...messages,
@@ -70,27 +201,19 @@ export default function ChatPage() {
         body: JSON.stringify({ messages: newMessages }),
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
       let assistantContent = "";
 
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: "" },
-      ]);
+      setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
 
       if (reader) {
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
-
-          const chunk = decoder.decode(value, { stream: true });
-          assistantContent += chunk;
-
+          assistantContent += decoder.decode(value, { stream: true });
           setMessages((prev) => [
             ...prev.slice(0, -1),
             { role: "assistant", content: assistantContent },
@@ -123,11 +246,9 @@ export default function ChatPage() {
     <div className="flex flex-col h-[calc(100vh-4rem)]">
 
       {/* Messages area */}
-      <div
-        ref={scrollContainerRef}
-        className="flex-1 overflow-y-auto"
-      >
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
         <div className="container mx-auto max-w-3xl px-4 py-6 space-y-5">
+
           {/* Welcome state */}
           {messages.length === 0 && (
             <div className="text-center py-12">
@@ -167,7 +288,17 @@ export default function ChatPage() {
 
           {/* Message list */}
           {messages.map((msg, i) => (
-            <ChatMessage key={i} message={msg} />
+            <ChatMessage
+              key={i}
+              message={msg}
+              onPlayTTS={
+                msg.role === "assistant" && msg.content
+                  ? () => playTTS(msg.content, i)
+                  : undefined
+              }
+              isPlaying={playingIndex === i}
+              isTTSLoading={ttsLoadingIndex === i}
+            />
           ))}
 
           {/* Loading indicator */}
@@ -188,19 +319,60 @@ export default function ChatPage() {
         </div>
       </div>
 
+      {/* TTS error banner */}
+      {ttsError && (
+        <div className="border-t border-red-500/20 bg-red-950/40 px-4 py-2 flex items-center justify-between gap-3">
+          <p className="text-red-300 text-xs">{ttsError}</p>
+          <button
+            onClick={() => setTTSError(null)}
+            className="text-red-400 hover:text-red-300 text-xs flex-shrink-0"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
       {/* Input area */}
-      <div className="border-t border-stone-700/50 bg-stone-900 px-4 py-4 animate-fade-in-up" style={{ animationDelay: "300ms" } as React.CSSProperties}>
-        <div className="container mx-auto max-w-3xl flex gap-3">
+      <div
+        className="border-t border-stone-700/50 bg-stone-900 px-4 py-4 animate-fade-in-up"
+        style={{ animationDelay: "300ms" } as React.CSSProperties}
+      >
+        <div className="container mx-auto max-w-3xl flex gap-2">
+          {/* Text input */}
           <input
             ref={inputRef}
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Ask the Sheriff about a potential scam..."
+            placeholder={
+              isRecording
+                ? "Listening…"
+                : "Ask the Sheriff about a potential scam..."
+            }
             disabled={isLoading}
             className="flex-1 bg-stone-800 border border-stone-700 rounded-xl px-4 py-3 text-stone-100 placeholder-stone-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 disabled:opacity-50 transition-all duration-200 text-sm"
           />
+
+          {/* Mic button */}
+          <button
+            onClick={toggleRecording}
+            disabled={isLoading}
+            className={`flex-shrink-0 p-3 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
+              isRecording
+                ? "bg-red-500 hover:bg-red-400 text-white shadow-lg shadow-red-500/30 animate-pulse"
+                : "bg-stone-800 border border-stone-700 text-stone-400 hover:text-amber-400 hover:border-amber-500/50"
+            }`}
+            aria-label={isRecording ? "Stop recording" : "Start voice input"}
+          >
+            {isRecording ? (
+              <MicOff className="h-5 w-5" />
+            ) : (
+              <Mic className="h-5 w-5" />
+            )}
+          </button>
+
+          {/* Send button */}
           <button
             onClick={() => sendMessage(input)}
             disabled={isLoading || !input.trim()}
