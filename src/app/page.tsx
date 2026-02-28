@@ -44,12 +44,6 @@ const features = [
   },
 ];
 
-const stats = [
-  { value: "4 Tools", label: "for staying safe" },
-  { value: "100%", label: "free to use" },
-  { value: "No DB", label: "your data stays private" },
-];
-
 export default function HomePage() {
   return (
     <div className="flex flex-col">
@@ -93,7 +87,7 @@ export default function HomePage() {
             Protecting crypto newcomers from scams, fraud, and costly mistakes.
           </p>
           <p className="text-stone-500 mb-10 text-lg">
-            Your trusted deputy in the Wild West of Solana.
+            Your trusted AI-powered deputy in the Wild West of Crypto.
           </p>
 
           {/* CTAs */}
@@ -110,18 +104,6 @@ export default function HomePage() {
             >
               Ask the Sheriff
             </Link>
-          </div>
-
-          {/* Stats */}
-          <div className="flex justify-center gap-12 mt-16">
-            {stats.map((stat) => (
-              <div key={stat.value} className="text-center">
-                <div className="text-2xl font-bold text-amber-400">
-                  {stat.value}
-                </div>
-                <div className="text-stone-500 text-sm">{stat.label}</div>
-              </div>
-            ))}
           </div>
         </div>
       </section>

@@ -98,20 +98,6 @@ export default function ChatPage() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)]">
-      {/* Header */}
-      <div className="border-b border-stone-700/50 bg-stone-800/40 px-4 py-4">
-        <div className="container mx-auto max-w-3xl flex items-center gap-3">
-          <div className="bg-amber-500/20 border border-amber-500/30 rounded-full p-2">
-            <ShieldCheck className="h-5 w-5 text-amber-400" />
-          </div>
-          <div>
-            <h1 className="font-bold text-stone-100">AI Safety Assistant</h1>
-            <p className="text-stone-400 text-sm">
-              Ask the Sheriff about any potential scam or suspicious activity
-            </p>
-          </div>
-        </div>
-      </div>
 
       {/* Messages area */}
       <div className="flex-1 overflow-y-auto">
