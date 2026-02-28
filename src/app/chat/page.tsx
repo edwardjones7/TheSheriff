@@ -78,7 +78,6 @@ export default function ChatPage() {
       const decoder = new TextDecoder();
       let assistantContent = "";
 
-      // Add empty assistant message placeholder
       setMessages((prev) => [
         ...prev,
         { role: "assistant", content: "" },
@@ -132,22 +131,32 @@ export default function ChatPage() {
           {/* Welcome state */}
           {messages.length === 0 && (
             <div className="text-center py-12">
-              <ShieldCheck className="h-12 w-12 text-amber-400/50 mx-auto mb-4" />
-              <h2 className="text-xl font-bold text-stone-200 mb-2">
+              <ShieldCheck
+                className="h-12 w-12 text-amber-400/50 mx-auto mb-4 animate-fade-in-up"
+                style={{ animationDelay: "0ms" } as React.CSSProperties}
+              />
+              <h2
+                className="text-xl font-bold text-stone-200 mb-2 animate-fade-in-up"
+                style={{ animationDelay: "80ms" } as React.CSSProperties}
+              >
                 Howdy, partner. What can I help you with?
               </h2>
-              <p className="text-stone-500 mb-8 max-w-md mx-auto">
+              <p
+                className="text-stone-500 mb-8 max-w-md mx-auto animate-fade-in-up"
+                style={{ animationDelay: "150ms" } as React.CSSProperties}
+              >
                 Tell me about something suspicious — a website, a message, a
                 token — and I&apos;ll give you my honest assessment.
               </p>
 
               {/* Example prompts */}
               <div className="grid sm:grid-cols-2 gap-3 max-w-xl mx-auto text-left">
-                {EXAMPLE_PROMPTS.map((prompt) => (
+                {EXAMPLE_PROMPTS.map((prompt, i) => (
                   <button
                     key={prompt}
                     onClick={() => sendMessage(prompt)}
-                    className="bg-stone-800 border border-stone-700 hover:border-amber-500/50 hover:text-amber-400 text-stone-300 px-4 py-3 rounded-xl text-sm text-left transition-all hover:bg-stone-800/80"
+                    className="bg-stone-800 border border-stone-700 hover:border-amber-500/50 hover:text-amber-400 text-stone-300 px-4 py-3 rounded-xl text-sm text-left transition-all duration-200 hover:bg-stone-800/80 hover:-translate-y-0.5 animate-fade-in-up"
+                    style={{ animationDelay: `${220 + i * 60}ms` } as React.CSSProperties}
                   >
                     &ldquo;{prompt}&rdquo;
                   </button>
@@ -165,7 +174,7 @@ export default function ChatPage() {
           {isLoading &&
             messages.length > 0 &&
             messages[messages.length - 1]?.role === "user" && (
-              <div className="flex gap-3 items-start">
+              <div className="flex gap-3 items-start animate-slide-in-left">
                 <div className="flex-shrink-0 w-8 h-8 rounded-full bg-amber-500/20 border border-amber-500/30 flex items-center justify-center">
                   <ShieldCheck className="h-4 w-4 text-amber-400" />
                 </div>
@@ -180,7 +189,7 @@ export default function ChatPage() {
       </div>
 
       {/* Input area */}
-      <div className="border-t border-stone-700/50 bg-stone-900 px-4 py-4">
+      <div className="border-t border-stone-700/50 bg-stone-900 px-4 py-4 animate-fade-in-up" style={{ animationDelay: "300ms" } as React.CSSProperties}>
         <div className="container mx-auto max-w-3xl flex gap-3">
           <input
             ref={inputRef}
@@ -190,12 +199,12 @@ export default function ChatPage() {
             onKeyDown={handleKeyDown}
             placeholder="Ask the Sheriff about a potential scam..."
             disabled={isLoading}
-            className="flex-1 bg-stone-800 border border-stone-700 rounded-xl px-4 py-3 text-stone-100 placeholder-stone-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 disabled:opacity-50 transition-colors text-sm"
+            className="flex-1 bg-stone-800 border border-stone-700 rounded-xl px-4 py-3 text-stone-100 placeholder-stone-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 disabled:opacity-50 transition-all duration-200 text-sm"
           />
           <button
             onClick={() => sendMessage(input)}
             disabled={isLoading || !input.trim()}
-            className="flex-shrink-0 bg-amber-500 hover:bg-amber-400 disabled:bg-stone-700 disabled:text-stone-500 disabled:cursor-not-allowed text-stone-900 font-bold p-3 rounded-xl transition-colors"
+            className="flex-shrink-0 bg-amber-500 hover:bg-amber-400 disabled:bg-stone-700 disabled:text-stone-500 disabled:cursor-not-allowed text-stone-900 font-bold p-3 rounded-xl transition-all duration-200 hover:shadow-lg hover:shadow-amber-500/30 hover:-translate-y-0.5 active:translate-y-0 disabled:hover:translate-y-0 disabled:hover:shadow-none"
             aria-label="Send message"
           >
             {isLoading ? (

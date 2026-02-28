@@ -141,12 +141,15 @@ const sections: Section[] = [
   },
 ];
 
-function AccordionSection({ section }: { section: Section }) {
+function AccordionSection({ section, delay }: { section: Section; delay: number }) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const Icon = section.icon;
 
   return (
-    <div className="bg-stone-800/60 border border-stone-700 rounded-2xl overflow-hidden">
+    <div
+      className="bg-stone-800/60 border border-stone-700 rounded-2xl overflow-hidden animate-fade-in-up hover:border-stone-600 transition-colors duration-200"
+      style={{ animationDelay: `${delay}ms` }}
+    >
       {/* Section header */}
       <div className="flex items-center gap-3 px-6 py-5 border-b border-stone-700/50">
         <div className="bg-stone-700/50 rounded-xl p-2.5">
@@ -164,26 +167,29 @@ function AccordionSection({ section }: { section: Section }) {
           >
             <button
               onClick={() => setOpenIndex(openIndex === i ? null : i)}
-              className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-stone-800/50 transition-colors"
+              className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-stone-800/50 transition-colors duration-150"
             >
               <span className="text-stone-200 font-medium text-sm pr-4">
                 {item.q}
               </span>
               <ChevronDown
                 className={cn(
-                  "h-4 w-4 text-stone-400 flex-shrink-0 transition-transform duration-200",
+                  "h-4 w-4 text-stone-400 flex-shrink-0 transition-transform duration-250",
                   openIndex === i && "rotate-180"
                 )}
               />
             </button>
 
-            {openIndex === i && (
-              <div className="px-6 pb-5">
-                <p className="text-stone-400 text-sm leading-relaxed">
-                  {item.a}
-                </p>
+            {/* Animated accordion content */}
+            <div className={cn("accordion-content", openIndex === i && "open")}>
+              <div className="accordion-inner">
+                <div className="px-6 pb-5 pt-1">
+                  <p className="text-stone-400 text-sm leading-relaxed">
+                    {item.a}
+                  </p>
+                </div>
               </div>
-            )}
+            </div>
           </div>
         ))}
       </div>
@@ -196,7 +202,7 @@ export default function ResourcesPage() {
     <div className="min-h-screen py-12 px-4">
       <div className="container mx-auto max-w-3xl">
         {/* Header */}
-        <div className="mb-12 text-center">
+        <div className="mb-12 text-center animate-fade-in-up" style={{ animationDelay: "0ms" }}>
           <h1 className="text-4xl font-bold text-stone-100 mb-3">
             Crypto Safety Resource Hub
           </h1>
@@ -208,13 +214,16 @@ export default function ResourcesPage() {
 
         {/* Sections */}
         <div className="space-y-5">
-          {sections.map((section) => (
-            <AccordionSection key={section.title} section={section} />
+          {sections.map((section, i) => (
+            <AccordionSection key={section.title} section={section} delay={80 + i * 70} />
           ))}
         </div>
 
         {/* Bottom note */}
-        <div className="mt-12 bg-amber-500/10 border border-amber-500/20 rounded-2xl p-6 text-center">
+        <div
+          className="mt-12 bg-amber-500/10 border border-amber-500/20 rounded-2xl p-6 text-center animate-fade-in-up"
+          style={{ animationDelay: "400ms" }}
+        >
           <p className="text-amber-300 text-sm mb-2 font-semibold">
             Still unsure about something?
           </p>
@@ -224,7 +233,7 @@ export default function ResourcesPage() {
           </p>
           <a
             href="/chat"
-            className="inline-flex bg-amber-500 hover:bg-amber-400 text-stone-900 font-bold px-6 py-2.5 rounded-xl transition-colors text-sm"
+            className="inline-flex bg-amber-500 hover:bg-amber-400 text-stone-900 font-bold px-6 py-2.5 rounded-xl transition-all duration-200 text-sm hover:-translate-y-0.5 hover:shadow-lg hover:shadow-amber-500/30 active:translate-y-0"
           >
             Ask the Sheriff
           </a>
