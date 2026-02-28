@@ -8,6 +8,7 @@ export interface AnalysisResult {
   score: number;
   findings: string[];
   advice: string;
+  solBalance?: number;
 }
 
 export interface WalletData {

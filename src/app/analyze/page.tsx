@@ -7,6 +7,10 @@ import RiskBadge from "@/components/RiskBadge";
 import { AnalysisResult } from "@/types";
 import { shortenAddress } from "@/lib/utils";
 
+function formatSol(balance: number): string {
+  return `${balance.toFixed(4)} SOL`;
+}
+
 export default function AnalyzePage() {
   const [address, setAddress] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -111,6 +115,11 @@ export default function AnalyzePage() {
                 <p className="text-stone-500 text-xs font-mono">
                   {shortenAddress(analyzedAddress)}
                 </p>
+                {typeof result.solBalance === "number" && (
+                  <p className="text-stone-300 text-sm mt-2">
+                    SOL Balance: {formatSol(result.solBalance)}
+                  </p>
+                )}
               </div>
               <RiskBadge level={result.riskLevel} size="lg" />
             </div>
