@@ -6,6 +6,7 @@ import { ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navLinks = [
+  { href: "/wallet", label: "Wallet Info" },
   { href: "/chat", label: "Ask Sheriff" },
   { href: "/analyze", label: "Analyze Wallet" },
   { href: "/check", label: "Check Recipient" },

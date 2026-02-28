@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getWalletData, getMockWalletData } from "@/lib/helius";
+import { getWalletData, getMockWalletData, getSolBalance } from "@/lib/helius";
 import { scoreRisk } from "@/lib/risk-scorer";
 import { isValidSolanaAddress } from "@/lib/utils";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
+
+function getDeterministicDemoBalance(address: string): number {
+  const seed = address.charCodeAt(0) + address.charCodeAt(address.length - 1);
+  return Number(((seed % 300) / 10).toFixed(4));
+}
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
@@ -34,6 +39,7 @@ export async function POST(req: NextRequest) {
   if (!process.env.HELIUS_API_KEY) {
     const mockData = getMockWalletData(address);
     const result = scoreRisk(mockData, resolvedMode);
+    const solBalance = getDeterministicDemoBalance(address);
 
     // Prepend a demo note to findings
     const demoFindings = [
@@ -41,13 +47,16 @@ export async function POST(req: NextRequest) {
       ...result.findings,
     ];
 
-    return NextResponse.json({ ...result, findings: demoFindings });
+    return NextResponse.json({ ...result, solBalance, findings: demoFindings });
   }
 
   try {
-    const walletData = await getWalletData(address);
+    const [walletData, solBalance] = await Promise.all([
+      getWalletData(address),
+      getSolBalance(address),
+    ]);
     const result = scoreRisk(walletData, resolvedMode);
-    return NextResponse.json(result);
+    return NextResponse.json({ ...result, solBalance });
   } catch (error) {
     console.error("Helius API error:", error);
     const message =
