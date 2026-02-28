@@ -58,7 +58,7 @@ export default function AnalyzePage() {
     <div className="min-h-screen py-12 px-4">
       <div className="container mx-auto max-w-2xl">
         {/* Header */}
-        <div className="mb-10">
+        <div className="mb-10 animate-fade-in-up" style={{ animationDelay: "0ms" }}>
           <div className="flex items-center gap-3 mb-3">
             <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-2.5">
               <Search className="h-5 w-5 text-amber-400" />
@@ -74,7 +74,10 @@ export default function AnalyzePage() {
         </div>
 
         {/* Input */}
-        <div className="bg-stone-800/60 border border-stone-700 rounded-2xl p-6 mb-6">
+        <div
+          className="bg-stone-800/60 border border-stone-700 rounded-2xl p-6 mb-6 animate-fade-in-up"
+          style={{ animationDelay: "80ms" }}
+        >
           <label className="block text-sm font-medium text-stone-300 mb-3">
             Solana Wallet Address
           </label>
@@ -90,7 +93,7 @@ export default function AnalyzePage() {
 
         {/* Error */}
         {error && (
-          <div className="mb-6 p-4 bg-red-900/20 border border-red-500/30 rounded-xl text-red-400 text-sm">
+          <div className="mb-6 p-4 bg-red-900/20 border border-red-500/30 rounded-xl text-red-400 text-sm animate-fade-in-up">
             ⚠ {error}
           </div>
         )}
@@ -98,9 +101,7 @@ export default function AnalyzePage() {
         {/* Results */}
         {result && (
           <div
-            className={`border rounded-2xl overflow-hidden ${
-              riskColors[result.riskLevel]
-            }`}
+            className={`border rounded-2xl overflow-hidden animate-fade-in-up ${riskColors[result.riskLevel]}`}
           >
             {/* Result header */}
             <div className="px-6 py-5 border-b border-stone-700/50 flex items-center justify-between">
@@ -124,7 +125,8 @@ export default function AnalyzePage() {
                 {result.findings.map((finding, i) => (
                   <li
                     key={i}
-                    className="flex items-start gap-2.5 text-stone-300 text-sm"
+                    className="flex items-start gap-2.5 text-stone-300 text-sm animate-fade-in-up"
+                    style={{ animationDelay: `${i * 50}ms` }}
                   >
                     <ChevronRight className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
                     {finding}
@@ -146,7 +148,7 @@ export default function AnalyzePage() {
         )}
 
         {/* Info note */}
-        <p className="text-stone-600 text-xs text-center mt-6">
+        <p className="text-stone-600 text-xs text-center mt-6 animate-fade-in" style={{ animationDelay: "160ms" }}>
           Analysis is based on on-chain data from Helius. Risk scores are
           heuristic-based — always use your own judgment.
         </p>
