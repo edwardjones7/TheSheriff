@@ -1,76 +1,69 @@
-#The Solana Sheriff
-Protecting crypto newcomers from scams, fraud, and costly mistakes.
+# The Solana Sheriff (Developer Docs)
 
-The Solana Sheriff is a web application designed to help beginners and non-technical users understand crypto risks, identify scams, and make safer decisions when interacting with Solana wallets.
+These docs explain what **The Solana Sheriff** is, how it works end-to-end, and where to find the main pieces of the system in the codebase.
 
-It combines education, wallet risk analysis, and an AI-powered assistant to act as a safety layer for users navigating crypto.
+## What this app does
 
----
+The Solana Sheriff is a **Next.js** web app that helps crypto newcomers avoid scams and bad decisions on Solana. It provides:
 
-#Target Demographic
-Crypto beginners
-Older or non-technical users
-Users concerned about scams and fraud
-Users unsure if a wallet or transaction is safe
+- **AI Safety Assistant**: a plain-language chat experience (with optional voice features).
+- **Wallet Analyzer**: a wallet risk assessment based on on-chain patterns, with an optional AI summary.
+- **Scam Token Detector**: a token “rugpull risk” scan (liquidity + distribution + mint authority), plus an optional AI verdict.
+- **Safety Resource Hub**: curated educational content about common scams and best practices.
 
----
+High-level principle: **no wallet connection required**. Users paste addresses; the app fetches public on-chain data and returns guidance.
 
-#Core Features (MVP)
-AI Safety Assistant
-A chatbot that allows users to describe real-world crypto scenarios and receive plain-language risk explanations and safety guidance.
+## At-a-glance architecture
 
-Examples:
+- **Frontend (App Router pages)**: `src/app/*/page.tsx`
+- **Server endpoints (Next.js route handlers)**: `src/app/api/**/route.ts`
+- **Core domain logic**:
+  - Helius integrations + evidence building: `src/lib/helius.ts`
+  - Heuristic wallet risk scoring: `src/lib/risk-scorer.ts`
+  - Gemini prompts + wallet AI assessment: `src/lib/gemini.ts`
+- **Shared types/contracts**: `src/types/index.ts`
 
-"Someone asked me to connect my wallet to this site"
-"I received a random token"
-"Someone wants me to send SOL first"
+If you’re new, start with:
 
----
+- **Architecture overview**: [`docs/architecture.md`](architecture.md)
+- **Endpoints**: [`docs/api.md`](api.md)
+- **Risk logic**: [`docs/risk-engine.md`](risk-engine.md)
+- **Env/config**: [`docs/configuration.md`](configuration.md)
+- **External services**: [`docs/external-services.md`](external-services.md)
 
-#Wallet Risk Analyzer
-Users can input a Solana wallet address to receive a risk assessment based on transaction patterns and behavioral indicators.
+## Local development quickstart
 
-Output includes:
+### Prerequisites
 
-Risk level (Low / Medium / High)
-Explanation of findings
-Recommended precautions
+- Node.js (works with the repo’s Next.js 14 setup)
 
----
+### Install and run
 
-#Recipient Wallet Safety Check
-Allows users to check a wallet before sending funds to identify potential scam or high-risk wallets.
+```bash
+npm install
+npm run dev
+```
 
----
+App runs on `http://localhost:3000`.
 
-#Crypto Safety Resource Hub
-##Educational content including:
+### Environment variables
 
-Common scams
-Red flags
-Wallet safety best practices
-Beginner safety guides
+Create a `.env` file in the repo root (see [`docs/configuration.md`](configuration.md) for details).
 
----
+Required for “live” mode:
 
-#Project Goals
-##MVP Goals
-Deploy a functional web application
-Implement AI safety chatbot
-Implement wallet risk analysis
-Implement recipient wallet safety checking
-Provide crypto safety resources
+- `HELIUS_API_KEY` (on-chain data)
+- `GEMINI_API_KEY` (AI assistant + AI wallet assessment + token verdict)
+- `ELEVENLABS_API_KEY` (text-to-speech)
 
-##Future Goals
-Known malicious wallet database
-Real-time risk detection
-Transaction simulation and warnings
-Browser extension
-Community reporting
+The app also supports **demo mode** when certain keys are missing (it returns deterministic mock data and/or canned AI responses). See [`docs/configuration.md`](configuration.md).
 
----
+## Where to look first (code map)
 
-#APIs
-Google Gemini - The brain of the operation.
-Solana API - For pulling data based of crypto wallet link 
-ElevenLabs - TTS integration / audio responses
+- **Home / navigation**: `src/app/page.tsx`, `src/components/Navbar.tsx`
+- **Chat UI + streaming**: `src/app/chat/page.tsx` → `src/app/api/chat/route.ts`
+- **Wallet Analyzer UI + API**: `src/app/analyze/page.tsx` → `src/app/api/analyze/route.ts`
+- **Token scan UI + API**: `src/app/token/page.tsx` → `src/app/api/token/route.ts`
+- **Token AI verdict**: `src/app/api/token/verdict/route.ts`
+- **TTS (assistant “Read aloud”)**: `src/app/api/tts/route.ts`
+
