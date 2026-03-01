@@ -4,6 +4,7 @@ import {
   MessageCircle,
   Search,
   BookOpen,
+  Flame,
   AlertTriangle,
   Star,
   ArrowRight,
@@ -14,7 +15,6 @@ import {
 
 const tools = [
   {
-    number: "01",
     href: "/chat",
     icon: MessageCircle,
     title: "AI Safety Assistant",
@@ -23,7 +23,6 @@ const tools = [
     cta: "Ask the Sheriff",
   },
   {
-    number: "02",
     href: "/analyze",
     icon: Search,
     title: "Wallet Analyzer",
@@ -32,7 +31,14 @@ const tools = [
     cta: "Analyze a Wallet",
   },
   {
-    number: "03",
+    href: "/token",
+    icon: Flame,
+    title: "Rugpull Detector",
+    description:
+      "Scan any token mint address for rug pull signals — liquidity depth, holder concentration, active mint authority, and an overall scam probability score.",
+    cta: "Scan a Token",
+  },
+  {
     href: "/resources",
     icon: BookOpen,
     title: "Safety Resource Hub",
@@ -165,14 +171,14 @@ export default function HomePage() {
               The Toolkit
             </p>
             <h2 className="text-4xl font-bold text-stone-100 mb-4">
-              Three tools. Zero jargon.
+              Four tools. Zero jargon.
             </h2>
             <p className="text-stone-400 text-lg max-w-xl mx-auto">
               Everything a crypto newcomer needs to stay safe — built for real people, not developers.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-4">
+          <div className="grid sm:grid-cols-2 gap-4">
             {tools.map((tool, i) => {
               const Icon = tool.icon;
               return (
