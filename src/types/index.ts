@@ -120,3 +120,27 @@ export interface WalletBalanceResponse {
   solBalance: number;
   note?: string;
 }
+
+export interface TokenScanResult {
+  riskLevel: "low" | "medium" | "high";
+  rugpullProbability: number;
+  tokenName: string;
+  tokenSymbol: string;
+  totalSupply: string;
+  liquidity: {
+    usd: number | null;
+    isRisk: boolean;
+    dexScreenerFound: boolean;
+  };
+  holderDistribution: {
+    top1Percent: number | null;
+    top10Percent: number | null;
+    isRisk: boolean;
+  };
+  creatorRisk: {
+    mintAuthorityActive: boolean;
+    mintAuthority: string | null;
+    isRisk: boolean;
+  };
+  riskFactors: string[];
+}

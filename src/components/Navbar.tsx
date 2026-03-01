@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 const navLinks = [
   { href: "/chat", label: "Ask Sheriff" },
   { href: "/analyze", label: "Analyze Wallet" },
+  { href: "/token", label: "Rugpull Detector" },
   { href: "/resources", label: "Resources" },
 ];
 
