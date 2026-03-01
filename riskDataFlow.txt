@@ -1,0 +1,7 @@
+1. user submits a wallet key
+2. we fetch relevant wallet data using the helius api
+3. collect that information in a json structure that we can then send to google
+   gemini's api to give us a risk assessment with their reasoning model
+4. Display gemini's risk assessment for the wallet, and then if the user clicks
+   "see more details" underneath, it will open a drop down that will show all of 
+   the detailed information that is shown in the json
