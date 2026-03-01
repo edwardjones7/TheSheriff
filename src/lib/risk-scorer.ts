@@ -12,7 +12,7 @@ export function scoreRisk(
   let score = 0;
   const scoredFindings: ScoringFinding[] = [];
 
-  // --- Heuristic: Wallet age ---
+  // --- Factor 1: Wallet age ---
   if (data.age < 7) {
     score += 2;
     scoredFindings.push({
@@ -32,41 +32,91 @@ export function scoreRisk(
     });
   }
 
-  // --- Heuristic: Transaction count ---
-  if (data.transactionCount < 5) {
+  // --- Factor 2: Transaction count (low = sus, 10-100 = normal, 1000+ = scam likely) ---
+  if (data.transactionCount < 10) {
+    score += 1;
     scoredFindings.push({
-      text: `Very few transactions (${data.transactionCount}) — limited history to assess`,
+      text: `Very few transactions (${data.transactionCount}) — suspiciously low activity`,
+      points: 1,
+    });
+  } else if (data.transactionCount <= 100) {
+    scoredFindings.push({
+      text: `Normal transaction volume (${data.transactionCount} transactions)`,
       points: 0,
     });
-  } else if (data.transactionCount > 500) {
+  } else if (data.transactionCount <= 1000) {
     scoredFindings.push({
-      text: `High transaction volume (${data.transactionCount} transactions) — active wallet`,
+      text: `Active wallet with ${data.transactionCount} transactions`,
       points: 0,
+    });
+  } else {
+    score += 2;
+    scoredFindings.push({
+      text: `Extremely high transaction volume (${data.transactionCount}) — possible bot or scam activity`,
+      points: 2,
     });
   }
 
-  // --- Heuristic: Unique outbound wallets (drainer/scammer pattern) ---
-  if (data.uniqueOutboundWallets > 100) {
+  // --- Factor 3: Unique counterparties (both inbound + outbound) ---
+  if (data.uniqueCounterparties > 200) {
     score += 3;
     scoredFindings.push({
-      text: `Sent funds to ${data.uniqueOutboundWallets} unique addresses — strong drainer/scammer pattern`,
+      text: `Interacted with ${data.uniqueCounterparties} unique wallets — strong drainer/scammer pattern`,
       points: 3,
     });
-  } else if (data.uniqueOutboundWallets > 50) {
+  } else if (data.uniqueCounterparties > 100) {
     score += 2;
     scoredFindings.push({
-      text: `Sent funds to ${data.uniqueOutboundWallets} unique addresses — unusual outbound activity`,
+      text: `Interacted with ${data.uniqueCounterparties} unique wallets — unusual breadth of activity`,
       points: 2,
     });
-  } else if (data.uniqueOutboundWallets > 20) {
+  } else if (data.uniqueCounterparties > 50) {
     score += 1;
     scoredFindings.push({
-      text: `Sent funds to ${data.uniqueOutboundWallets} unique addresses — somewhat high`,
+      text: `Interacted with ${data.uniqueCounterparties} unique wallets — somewhat high`,
       points: 1,
     });
   }
 
-  // --- Heuristic: Inbound unknown tokens (airdrop scam pattern) ---
+  // --- Factor 4: Transaction burst (time-window batching) ---
+  if (data.maxTxBurst1m > 20) {
+    score += 3;
+    scoredFindings.push({
+      text: `Extreme burst: ${data.maxTxBurst1m} transactions within 1 minute — automated/bot behavior`,
+      points: 3,
+    });
+  } else if (data.maxTxBurst1m > 10) {
+    score += 2;
+    scoredFindings.push({
+      text: `High burst: ${data.maxTxBurst1m} transactions within 1 minute — likely scripted activity`,
+      points: 2,
+    });
+  } else if (data.maxTxBurst5m > 20) {
+    score += 1;
+    scoredFindings.push({
+      text: `Elevated burst: ${data.maxTxBurst5m} transactions within 5 minutes`,
+      points: 1,
+    });
+  }
+
+  // --- Factor 5: Risky programs (deferred) ---
+
+  // --- Factor 6: Token variety (distinct held mints) ---
+  if (data.heldTokenMintsCount > 50) {
+    score += 2;
+    scoredFindings.push({
+      text: `Holds ${data.heldTokenMintsCount} different tokens — unusually large variety, often seen in scam distributors`,
+      points: 2,
+    });
+  } else if (data.heldTokenMintsCount > 20) {
+    score += 1;
+    scoredFindings.push({
+      text: `Holds ${data.heldTokenMintsCount} different tokens — above-average variety`,
+      points: 1,
+    });
+  }
+
+  // --- Supplementary: Inbound unknown tokens (airdrop scam pattern) ---
   if (data.inboundTokenCount > 30) {
     score += 2;
     scoredFindings.push({
@@ -78,6 +128,14 @@ export function scoreRisk(
     scoredFindings.push({
       text: `Received ${data.inboundTokenCount} different token types — possible airdrop activity`,
       points: 1,
+    });
+  }
+
+  // --- Coverage caveat ---
+  if (data.coverage.hitCap) {
+    scoredFindings.push({
+      text: `Analysis based on the most recent ${data.coverage.transactionsFetched} transactions — full history was too large to fetch`,
+      points: 0,
     });
   }
 

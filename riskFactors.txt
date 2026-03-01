@@ -1,0 +1,13 @@
+Wallet Risk Factors
+
+1. Wallet Age (New wallets = increase in scam liklihood)
+
+2. Number of Transactions (low = sus , 10-100 = normal , 1000+ = scam likely)
+
+3. number of unique wallets
+
+4. how many transactions at a time in a batch
+
+5. does it interact with risky programs?
+
+6. does it hold a large variety of tokens?

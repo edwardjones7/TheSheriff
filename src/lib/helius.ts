@@ -1,5 +1,9 @@
 import {
+  RiskEvidence,
+  RiskEvidenceHolding,
+  RiskEvidenceTransaction,
   WalletData,
+  WalletDataCoverage,
   WalletInfoResponse,
   WalletInfoTokenHolding,
   WalletInfoTransaction,
@@ -8,6 +12,8 @@ import {
 const HELIUS_BASE_URL = "https://api.helius.xyz/v0";
 const HELIUS_RPC_URL = "https://mainnet.helius-rpc.com";
 const DEFAULT_REVALIDATE_SECONDS = 60;
+const TX_FETCH_CAP = 2000;
+const TX_PAGE_SIZE = 100;
 
 function getHeliusApiKey(): string {
   const apiKey = process.env.HELIUS_API_KEY?.trim();
@@ -65,7 +71,7 @@ async function heliusRpcRequest(
 
 export async function getEnhancedTransactionsByAddress(
   address: string,
-  options: { before?: string; limit?: number } = {}
+  options: { before?: string; limit?: number; sortOrder?: "asc" | "desc" } = {}
 ): Promise<Record<string, unknown>[]> {
   const apiKey = getHeliusApiKey();
   const params = new URLSearchParams({
@@ -74,7 +80,11 @@ export async function getEnhancedTransactionsByAddress(
   });
 
   if (options.before) {
-    params.set("before", options.before);
+    params.set("before-signature", options.before);
+  }
+
+  if (options.sortOrder) {
+    params.set("sort-order", options.sortOrder);
   }
 
   const response = await fetch(
@@ -120,6 +130,18 @@ export async function getSolBalance(address: string): Promise<number> {
   }
   const lamports = asNumber(result.value) ?? 0;
   return lamports / 1_000_000_000;
+}
+
+async function getOldestTxTimestamp(
+  address: string
+): Promise<number | null> {
+  const page = await getEnhancedTransactionsByAddress(address, {
+    limit: 1,
+    sortOrder: "asc",
+  });
+
+  if (page.length === 0) return null;
+  return asNumber(page[0].timestamp);
 }
 
 function countWalletAgeDays(
@@ -217,21 +239,28 @@ export async function getWalletInfo(
 ): Promise<WalletInfoResponse> {
   const limit = Math.min(Math.max(options.limit ?? 25, 1), 100);
 
-  const [transactionsRaw, assets, solBalance] = await Promise.all([
-    getEnhancedTransactionsByAddress(address, {
-      before: options.before,
-      limit,
-    }),
-    getAssetsByOwner(address),
-    getSolBalance(address),
-  ]);
+  const [transactionsRaw, assets, solBalance, oldestTimestamp] =
+    await Promise.all([
+      getEnhancedTransactionsByAddress(address, {
+        before: options.before,
+        limit,
+      }),
+      getAssetsByOwner(address),
+      getSolBalance(address),
+      getOldestTxTimestamp(address),
+    ]);
 
   const normalizedTransactions = transactionsRaw
     .map(normalizeTransaction)
     .filter((tx): tx is WalletInfoTransaction => tx !== null);
 
-  const { firstSeenTimestamp, lastSeenTimestamp, ageDays } =
-    countWalletAgeDays(transactionsRaw);
+  const pageTimes = countWalletAgeDays(transactionsRaw);
+  const firstSeenTimestamp = oldestTimestamp ?? pageTimes.firstSeenTimestamp;
+  const lastSeenTimestamp = pageTimes.lastSeenTimestamp;
+  const ageDays =
+    firstSeenTimestamp !== null
+      ? (Date.now() / 1000 - firstSeenTimestamp) / 86400
+      : null;
 
   const fungibleAssets = assets.filter(isFungibleAsset);
   const nftCount = Math.max(assets.length - fungibleAssets.length, 0);
@@ -265,60 +294,217 @@ export async function getWalletInfo(
   };
 }
 
-export async function getWalletData(address: string): Promise<WalletData> {
-  const transactions = await getEnhancedTransactionsByAddress(address, { limit: 100 });
-  const assets = await getAssetsByOwner(address);
+async function fetchAllEnhancedTransactions(
+  address: string,
+  cap: number = TX_FETCH_CAP
+): Promise<{ transactions: Record<string, unknown>[]; hitCap: boolean; hasMore: boolean }> {
+  const allTransactions: Record<string, unknown>[] = [];
+  let before: string | undefined;
+  let hasMore = true;
 
-  const { ageDays } = countWalletAgeDays(transactions);
-  const age = ageDays ?? 0;
+  while (allTransactions.length < cap) {
+    const remaining = cap - allTransactions.length;
+    const pageSize = Math.min(TX_PAGE_SIZE, remaining);
 
-  const outboundWallets = new Set<string>();
+    const page = await getEnhancedTransactionsByAddress(address, {
+      limit: pageSize,
+      before,
+    });
+
+    if (page.length === 0) {
+      hasMore = false;
+      break;
+    }
+
+    allTransactions.push(...page);
+
+    const lastTx = page[page.length - 1];
+    const lastSig = isRecord(lastTx) ? asString(lastTx.signature) : null;
+
+    if (!lastSig || page.length < pageSize) {
+      hasMore = page.length >= pageSize;
+      break;
+    }
+
+    if (lastSig === before) {
+      hasMore = false;
+      break;
+    }
+
+    before = lastSig;
+  }
+
+  const hitCap = allTransactions.length >= cap;
+
+  return { transactions: allTransactions, hitCap, hasMore };
+}
+
+function computeCounterpartiesAndInbound(
+  transactions: Record<string, unknown>[],
+  address: string
+): { counterparties: number; inboundTokenMints: number } {
+  const counterparties = new Set<string>();
+  const inboundTokenMints = new Set<string>();
+
   for (const tx of transactions) {
-    const nativeTransfers = Array.isArray(tx.nativeTransfers) ? tx.nativeTransfers : [];
-    const tokenTransfers = Array.isArray(tx.tokenTransfers) ? tx.tokenTransfers : [];
+    const nativeTransfers = Array.isArray(tx.nativeTransfers)
+      ? tx.nativeTransfers
+      : [];
+    const tokenTransfers = Array.isArray(tx.tokenTransfers)
+      ? tx.tokenTransfers
+      : [];
 
     for (const transfer of nativeTransfers) {
       if (!isRecord(transfer)) continue;
-      if (
-        asString(transfer.fromUserAccount) === address &&
-        asString(transfer.toUserAccount)
-      ) {
-        outboundWallets.add(asString(transfer.toUserAccount) as string);
-      }
+      const from = asString(transfer.fromUserAccount);
+      const to = asString(transfer.toUserAccount);
+      if (from === address && to) counterparties.add(to);
+      else if (to === address && from) counterparties.add(from);
     }
 
     for (const transfer of tokenTransfers) {
       if (!isRecord(transfer)) continue;
-      if (
-        asString(transfer.fromUserAccount) === address &&
-        asString(transfer.toUserAccount)
-      ) {
-        outboundWallets.add(asString(transfer.toUserAccount) as string);
-      }
-    }
-  }
+      const from = asString(transfer.fromUserAccount);
+      const to = asString(transfer.toUserAccount);
+      if (from === address && to) counterparties.add(to);
+      else if (to === address && from) counterparties.add(from);
 
-  const inboundTokenMints = new Set<string>();
-  for (const tx of transactions) {
-    const tokenTransfers = Array.isArray(tx.tokenTransfers) ? tx.tokenTransfers : [];
-    for (const transfer of tokenTransfers) {
-      if (!isRecord(transfer)) continue;
-      if (
-        asString(transfer.toUserAccount) === address &&
-        asString(transfer.mint)
-      ) {
-        inboundTokenMints.add(asString(transfer.mint) as string);
+      if (to === address) {
+        const mint = asString(transfer.mint);
+        if (mint) inboundTokenMints.add(mint);
       }
     }
   }
 
   return {
+    counterparties: counterparties.size,
+    inboundTokenMints: inboundTokenMints.size,
+  };
+}
+
+function computeMaxTxBurst(
+  transactions: Record<string, unknown>[],
+  windowSeconds: number
+): number {
+  const timestamps = transactions
+    .map((tx) => asNumber(tx.timestamp))
+    .filter((t): t is number => t !== null)
+    .sort((a, b) => a - b);
+
+  if (timestamps.length <= 1) return timestamps.length;
+
+  let maxBurst = 1;
+  let windowStart = 0;
+
+  for (let windowEnd = 1; windowEnd < timestamps.length; windowEnd++) {
+    while (timestamps[windowEnd] - timestamps[windowStart] > windowSeconds) {
+      windowStart++;
+    }
+    maxBurst = Math.max(maxBurst, windowEnd - windowStart + 1);
+  }
+
+  return maxBurst;
+}
+
+function countHeldFungibleMints(assets: Record<string, unknown>[]): number {
+  let count = 0;
+  for (const asset of assets) {
+    if (!isFungibleAsset(asset)) continue;
+    const holding = extractTokenHolding(asset);
+    if (holding) count++;
+  }
+  return count;
+}
+
+export async function getWalletData(address: string): Promise<WalletData> {
+  const [{ transactions, hitCap, hasMore }, assets, oldestTimestamp] =
+    await Promise.all([
+      fetchAllEnhancedTransactions(address),
+      getAssetsByOwner(address),
+      getOldestTxTimestamp(address),
+    ]);
+
+  const { lastSeenTimestamp } = countWalletAgeDays(transactions);
+
+  const firstSeenTimestamp =
+    oldestTimestamp ?? countWalletAgeDays(transactions).firstSeenTimestamp;
+
+  const ageDays =
+    firstSeenTimestamp !== null
+      ? (Date.now() / 1000 - firstSeenTimestamp) / 86400
+      : null;
+
+  const { counterparties, inboundTokenMints } =
+    computeCounterpartiesAndInbound(transactions, address);
+
+  const coverage: WalletDataCoverage = {
+    transactionsFetched: transactions.length,
+    hitCap,
+    firstSeenTimestamp,
+    lastSeenTimestamp,
+    hasMore,
+  };
+
+  return {
     transactions,
     assets,
-    age,
-    uniqueOutboundWallets: outboundWallets.size,
-    inboundTokenCount: inboundTokenMints.size,
+    age: ageDays ?? 0,
     transactionCount: transactions.length,
+    uniqueCounterparties: counterparties,
+    inboundTokenCount: inboundTokenMints,
+    heldTokenMintsCount: countHeldFungibleMints(assets),
+    maxTxBurst1m: computeMaxTxBurst(transactions, 60),
+    maxTxBurst5m: computeMaxTxBurst(transactions, 300),
+    coverage,
+  };
+}
+
+const EVIDENCE_TX_CAP = 200;
+
+export function buildRiskEvidence(
+  address: string,
+  data: WalletData
+): RiskEvidence {
+  const normalizedTx: RiskEvidenceTransaction[] = data.transactions
+    .slice(0, EVIDENCE_TX_CAP)
+    .map((tx) => {
+      const norm = normalizeTransaction(tx);
+      if (!norm) return null;
+      return {
+        signature: norm.signature,
+        timestamp: norm.timestamp,
+        type: norm.type,
+        source: norm.source,
+        status: norm.status,
+        nativeTransfersCount: norm.nativeTransfersCount,
+        tokenTransfersCount: norm.tokenTransfersCount,
+      };
+    })
+    .filter((tx): tx is RiskEvidenceTransaction => tx !== null);
+
+  const holdings: RiskEvidenceHolding[] = data.assets
+    .filter(isFungibleAsset)
+    .map(extractTokenHolding)
+    .filter((h): h is WalletInfoTokenHolding => h !== null)
+    .sort((a, b) => b.amount - a.amount)
+    .map((h) => ({ mint: h.mint, symbol: h.symbol, amount: h.amount }));
+
+  return {
+    inputs: {
+      address,
+      analyzedAt: new Date().toISOString(),
+    },
+    factors: {
+      walletAgeDays: data.age,
+      transactionCount: data.transactionCount,
+      uniqueCounterpartiesCount: data.uniqueCounterparties,
+      maxTxBurst1m: data.maxTxBurst1m,
+      maxTxBurst5m: data.maxTxBurst5m,
+      heldTokenMintsCount: data.heldTokenMintsCount,
+    },
+    holdings,
+    transactions: normalizedTx,
+    coverage: data.coverage,
   };
 }
 
@@ -388,15 +574,27 @@ export function getMockWalletData(address: string): WalletData {
   const seed = address.charCodeAt(0) + address.charCodeAt(address.length - 1);
   const age = 30 + (seed % 300);
   const txCount = 10 + (seed % 90);
-  const outbound = seed % 15;
+  const counterparties = seed % 25;
   const inbound = seed % 8;
+  const heldMints = 3 + (seed % 10);
+  const now = Math.floor(Date.now() / 1000);
 
   return {
     transactions: Array(txCount).fill({}),
     assets: [],
     age,
-    uniqueOutboundWallets: outbound,
-    inboundTokenCount: inbound,
     transactionCount: txCount,
+    uniqueCounterparties: counterparties,
+    inboundTokenCount: inbound,
+    heldTokenMintsCount: heldMints,
+    maxTxBurst1m: 1 + (seed % 4),
+    maxTxBurst5m: 2 + (seed % 8),
+    coverage: {
+      transactionsFetched: txCount,
+      hitCap: false,
+      firstSeenTimestamp: now - age * 86400,
+      lastSeenTimestamp: now - 3600,
+      hasMore: false,
+    },
   };
 }

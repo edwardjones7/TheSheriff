@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getWalletData, getMockWalletData, getSolBalance } from "@/lib/helius";
+import {
+  getWalletData,
+  getMockWalletData,
+  getSolBalance,
+  buildRiskEvidence,
+} from "@/lib/helius";
 import { scoreRisk } from "@/lib/risk-scorer";
 import { isValidSolanaAddress } from "@/lib/utils";
 
@@ -35,19 +40,23 @@ export async function POST(req: NextRequest) {
 
   const resolvedMode = mode === "recipient" ? "recipient" : "analyze";
 
-  // Demo mode — no Helius API key
   if (!process.env.HELIUS_API_KEY) {
     const mockData = getMockWalletData(address);
     const result = scoreRisk(mockData, resolvedMode);
     const solBalance = getDeterministicDemoBalance(address);
+    const riskEvidence = buildRiskEvidence(address, mockData);
 
-    // Prepend a demo note to findings
     const demoFindings = [
       "⚠ Demo mode — connect a Helius API key for real on-chain data",
       ...result.findings,
     ];
 
-    return NextResponse.json({ ...result, solBalance, findings: demoFindings });
+    return NextResponse.json({
+      ...result,
+      solBalance,
+      findings: demoFindings,
+      riskEvidence,
+    });
   }
 
   try {
@@ -56,7 +65,8 @@ export async function POST(req: NextRequest) {
       getSolBalance(address),
     ]);
     const result = scoreRisk(walletData, resolvedMode);
-    return NextResponse.json({ ...result, solBalance });
+    const riskEvidence = buildRiskEvidence(address, walletData);
+    return NextResponse.json({ ...result, solBalance, riskEvidence });
   } catch (error) {
     console.error("Helius API error:", error);
     const message =

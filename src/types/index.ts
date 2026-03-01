@@ -9,15 +9,64 @@ export interface AnalysisResult {
   findings: string[];
   advice: string;
   solBalance?: number;
+  riskEvidence?: RiskEvidence;
+}
+
+export interface WalletDataCoverage {
+  transactionsFetched: number;
+  hitCap: boolean;
+  firstSeenTimestamp: number | null;
+  lastSeenTimestamp: number | null;
+  hasMore: boolean;
 }
 
 export interface WalletData {
   transactions: Record<string, unknown>[];
   assets: Record<string, unknown>[];
   age: number;
-  uniqueOutboundWallets: number;
-  inboundTokenCount: number;
   transactionCount: number;
+  uniqueCounterparties: number;
+  inboundTokenCount: number;
+  heldTokenMintsCount: number;
+  maxTxBurst1m: number;
+  maxTxBurst5m: number;
+  coverage: WalletDataCoverage;
+}
+
+export interface RiskEvidenceFactors {
+  walletAgeDays: number;
+  transactionCount: number;
+  uniqueCounterpartiesCount: number;
+  maxTxBurst1m: number;
+  maxTxBurst5m: number;
+  heldTokenMintsCount: number;
+}
+
+export interface RiskEvidenceHolding {
+  mint: string;
+  symbol: string;
+  amount: number;
+}
+
+export interface RiskEvidenceTransaction {
+  signature: string;
+  timestamp: number | null;
+  type: string;
+  source: string | null;
+  status: "success" | "failed";
+  nativeTransfersCount: number;
+  tokenTransfersCount: number;
+}
+
+export interface RiskEvidence {
+  inputs: {
+    address: string;
+    analyzedAt: string;
+  };
+  factors: RiskEvidenceFactors;
+  holdings: RiskEvidenceHolding[];
+  transactions: RiskEvidenceTransaction[];
+  coverage: WalletDataCoverage;
 }
 
 export interface WalletInfoOverview {
