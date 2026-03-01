@@ -1,7 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Flame, ChevronRight, AlertTriangle, CheckCircle2 } from "lucide-react";
+import {
+  Flame,
+  ChevronRight,
+  AlertTriangle,
+  CheckCircle2,
+  ShieldCheck,
+  Loader2,
+} from "lucide-react";
 import WalletInput from "@/components/WalletInput";
 import RiskBadge from "@/components/RiskBadge";
 import { TokenScanResult } from "@/types";
@@ -65,6 +72,42 @@ export default function TokenPage() {
   const [result, setResult] = useState<TokenScanResult | null>(null);
   const [scannedAddress, setScannedAddress] = useState("");
   const [error, setError] = useState("");
+  const [verdict, setVerdict] = useState("");
+  const [isVerdictLoading, setIsVerdictLoading] = useState(false);
+  const [verdictError, setVerdictError] = useState(false);
+
+  const fetchVerdict = async (scanResult: TokenScanResult) => {
+    setIsVerdictLoading(true);
+    setVerdict("");
+    setVerdictError(false);
+
+    try {
+      const response = await fetch("/api/token/verdict", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ result: scanResult }),
+      });
+
+      if (!response.ok || !response.body) {
+        setVerdictError(true);
+        return;
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        setVerdict((prev) => prev + chunk);
+      }
+    } catch {
+      setVerdictError(true);
+    } finally {
+      setIsVerdictLoading(false);
+    }
+  };
 
   const scan = async () => {
     const trimmed = address.trim();
@@ -73,6 +116,8 @@ export default function TokenPage() {
     setIsLoading(true);
     setError("");
     setResult(null);
+    setVerdict("");
+    setVerdictError(false);
 
     try {
       const response = await fetch("/api/token", {
@@ -89,6 +134,7 @@ export default function TokenPage() {
       const data: TokenScanResult = await response.json();
       setResult(data);
       setScannedAddress(trimmed);
+      fetchVerdict(data);
     } catch (err) {
       setError(
         err instanceof Error
@@ -148,10 +194,10 @@ export default function TokenPage() {
           </div>
         )}
 
-        {/* Results */}
+        {/* Risk Assessment */}
         {result && (
           <div
-            className={`border rounded-2xl overflow-hidden animate-fade-in-up ${riskColors[result.riskLevel]}`}
+            className={`border rounded-2xl overflow-hidden animate-fade-in-up mb-4 ${riskColors[result.riskLevel]}`}
           >
             {/* Header */}
             <div className="px-6 py-5 border-b border-stone-700/50 flex items-start justify-between gap-4">
@@ -239,17 +285,15 @@ export default function TokenPage() {
                 <MetricRow
                   label="Mint authority"
                   value={
-                    result.creatorRisk.mintAuthorityActive
-                      ? "Active"
-                      : "Revoked"
+                    result.creatorRisk.mintAuthorityActive ? "Active" : "Revoked"
                   }
                   subvalue={
                     result.creatorRisk.mintAuthorityActive &&
                     result.creatorRisk.mintAuthority
                       ? shortenAddress(result.creatorRisk.mintAuthority)
-                      : result.creatorRisk.mintAuthorityActive
-                      ? undefined
-                      : "Safe — creator cannot mint new tokens"
+                      : !result.creatorRisk.mintAuthorityActive
+                      ? "Safe — creator cannot mint new tokens"
+                      : undefined
                   }
                   isRisk={result.creatorRisk.isRisk}
                 />
@@ -278,6 +322,40 @@ export default function TokenPage() {
                   </li>
                 ))}
               </ul>
+            </div>
+          </div>
+        )}
+
+        {/* Sheriff's Verdict */}
+        {result && (
+          <div className="bg-stone-800/60 border border-amber-500/20 rounded-2xl overflow-hidden animate-fade-in-up">
+            <div className="px-6 py-5 border-b border-stone-700/50 flex items-center gap-3">
+              <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-2">
+                <ShieldCheck className="h-4 w-4 text-amber-400" />
+              </div>
+              <h2 className="text-base font-bold text-stone-100">
+                Sheriff&apos;s Verdict
+              </h2>
+            </div>
+
+            <div className="px-6 py-5">
+              {verdictError ? (
+                <p className="text-stone-500 text-sm">
+                  Could not reach the Sheriff — check your Gemini API key or try again.
+                </p>
+              ) : isVerdictLoading && !verdict ? (
+                <div className="flex items-center gap-2.5 text-stone-400 text-sm">
+                  <Loader2 className="h-4 w-4 animate-spin text-amber-500" />
+                  The Sheriff is reviewing the evidence...
+                </div>
+              ) : (
+                <p className="text-stone-200 text-sm leading-relaxed">
+                  {verdict}
+                  {isVerdictLoading && (
+                    <span className="inline-block w-0.5 h-4 bg-amber-400 ml-0.5 animate-pulse align-middle" />
+                  )}
+                </p>
+              )}
             </div>
           </div>
         )}
