@@ -106,7 +106,7 @@ Receiving random tokens in your wallet is a common scam setup. Here's how it usu
 // Wallet risk assessment via Gemini
 // ---------------------------------------------------------------------------
 
-const GEMINI_MODEL = "gemini-2.5-flash";
+const GEMINI_MODEL = "gemini-3-flash-preview";
 
 export const WALLET_RISK_SYSTEM_PROMPT = `You are The Solana Sheriff's wallet risk analysis engine. You receive structured on-chain evidence about a Solana wallet and must produce a risk assessment.
 
