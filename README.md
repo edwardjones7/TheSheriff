@@ -1,5 +1,5 @@
 # HenHacks 2026 Security Submission
-The Solana Sheriff a tool use to mitigate a multi-billion dollar fraud industry.
+The Solana Sheriff a tool use to mitigate a multi-billion dollar crypto fraud industry.
 
 Devpost: [Link](https://devpost.com/software/the-solana-sheriff?ref_content=my-projects-tab&ref_feature=my_projects)
 
