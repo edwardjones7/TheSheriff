@@ -1,9 +1,13 @@
 # HenHacks 2026 Security Submission
 The Solana Sheriff is a tool used to mitigate a multi-billion dollar crypto fraud industry.
 
-Devpost: [Link](https://devpost.com/software/the-solana-sheriff?ref_content=my-projects-tab&ref_feature=my_projects)
 Christopher Duym : duymch27@students.rowan.edu
+
 Edward Jones : jonese24@rowan.edu
+
+Devpost: [Link](https://devpost.com/software/the-solana-sheriff?ref_content=my-projects-tab&ref_feature=my_projects)
+
+Hosted At: [Link](thesolanasheriff.tech)
 
 # The Solana Sheriff (Developer Docs)
 
